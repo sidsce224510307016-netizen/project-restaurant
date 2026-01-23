@@ -14,7 +14,8 @@
 </button>
 
 <script>
-async function assign(tableNumber) {
+
+async function autoAssign(tableNumber) {
   const res = await fetch("/api/manager-assign", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

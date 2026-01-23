@@ -19,6 +19,11 @@ async function loadOrders() {
   const box = document.getElementById("orders");
   box.innerHTML = "";
 
+  if (orders.length === 0) {
+    box.innerHTML = "<p>No orders cooking yet</p>";
+    return;
+  }
+
   orders.forEach(o => {
     box.innerHTML += `
       <div class="bg-gray-800 p-4 rounded mb-3">
@@ -44,6 +49,9 @@ async function done(orderId, tableNumber) {
 
 setInterval(loadOrders, 3000);
 loadOrders();
+
+
+
 </script>
 
 </body>
