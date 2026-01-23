@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Manager Dashboard | Rialto</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+body {
+  font-family: 'Inter', sans-serif;
+}
+.card {
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+
+<body class="bg-[#020617] text-white min-h-screen p-6">
+
+<h1 class="text-3xl font-bold mb-6">🧑‍💼 Manager Dashboard</h1>
+
+<!-- TABLES -->
+<h2 class="text-xl font-semibold mb-4">Tables</h2>
+<div id="tables" class="grid md:grid-cols-2 gap-4 mb-10"></div>
+
+<!-- QUEUE -->
+<h2 class="text-xl font-semibold mb-4">Waiting Queue</h2>
+<div id="queue" class="space-y-4"></div>
+
+<script>
+/* ------------------ MOCK DATA (REPLACE WITH BACKEND LATER) ------------------ */
+
+let tables = [
+  { number: 1, capacity: 2, occupied: false },
+  { number: 2, capacity: 4, occupied: true },
+  { number: 3, capacity: 4, occupied: false },
+  { number: 4, capacity: 6, occupied: false }
+];
+
+let waitingOrders = [
+  { id: 1, name: "Amit", people: 2, createdAt: Date.now() - 5 * 60000 },
+  { id: 2, name: "Rahul", people: 4, createdAt: Date.now() - 3 * 60000 },
+  { id: 3, name: "Neha", people: 1, createdAt: Date.now() - 2 * 60000 }
+];
+
+/* ------------------ CORE LOGIC ------------------ */
+
+/*
+RULES:
+1. Exact fit first
+2. Otherwise FIFO
+3. Manager confirms
+*/
+
+function selectPartyForTable(queue, tableCapacity) {
+  // Rule 1: exact match
+  const exact = queue.find(p => p.people === tableCapacity);
+  if (exact) return exact;
+
+  // Rule 2: FIFO (first that fits)
+  const fifo = queue.find(p => p.people < tableCapacity);
+  if (fifo) return fifo;
+
+  return null;
+}
+
+/* ------------------ UI RENDERING ------------------ */
+
+function renderTables() {
+  const container = document.getElementById("tables");
+  container.innerHTML = "";
+
+  tables.forEach(table => {
+    container.innerHTML += `
+      <div class="card bg-[#1e293b] p-5 rounded-xl">
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="text-lg font-semibold">Table ${table.number}</h3>
+          <span class="${table.occupied ? "text-red-400" : "text-green-400"}">
+            ${table.occupied ? "Occupied" : "Free"}
+          </span>
+        </div>
+        <p class="text-gray-300 mb-3">Capacity: ${table.capacity}</p>
+
+        ${
+          table.occupied
+            ? `<button onclick="freeTable(${table.number})"
+                class="bg-red-500 px-4 py-2 rounded-xl text-black font-semibold">
+                Free Table
+              </button>`
+            : `<button onclick="autoAssign(${table.number})"
+                class="bg-green-500 px-4 py-2 rounded-xl text-black font-semibold">
+                Auto Assign
+              </button>`
+        }
+      </div>
+    `;
+  });
+}
+
+function renderQueue() {
+  const container = document.getElementById("queue");
+  container.innerHTML = "";
+
+  if (waitingOrders.length === 0) {
+    container.innerHTML = `<p class="text-gray-400">No waiting customers</p>`;
+    return;
+  }
+
+  waitingOrders.forEach(order => {
+    const waitMinutes = Math.floor((Date.now() - order.createdAt) / 60000);
+
+    container.innerHTML += `
+      <div class="card bg-[#1e293b] p-5 rounded-xl">
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="text-lg font-semibold">${order.name}</h3>
+          <span class="text-yellow-400">${order.people} people</span>
+        </div>
+        <p class="text-gray-400">Waiting: ${waitMinutes} min</p>
+      </div>
+    `;
+  });
+}
+
+/* ------------------ ACTIONS ------------------ */
+
+function autoAssign(tableNumber) {
+  const table = tables.find(t => t.number === tableNumber);
+  if (!table || table.occupied) return;
+
+  const selected = selectPartyForTable(waitingOrders, table.capacity);
+
+  if (!selected) {
+    alert("No suitable party for this table");
+    return;
+  }
+
+  table.occupied = true;
+  waitingOrders = waitingOrders.filter(o => o.id !== selected.id);
+
+  alert(
+    `Table ${table.number} assigned to ${selected.name}
+(${selected.people} people)`
+  );
+
+  renderTables();
+  renderQueue();
+}
+
+function freeTable(tableNumber) {
+  const table = tables.find(t => t.number === tableNumber);
+  if (!table) return;
+
+  table.occupied = false;
+  alert(`Table ${tableNumber} is now free`);
+
+  renderTables();
+}
+
+/* ------------------ INIT ------------------ */
+
+renderTables();
+renderQueue();
+</script>
+
+</body>
+</html>
