@@ -3,207 +3,45 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rialto – Smart Ordering</title>
+<title>Rialto – Order</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-
-<style>
-body {
-  font-family: 'Inter', sans-serif;
-  scroll-behavior: smooth;
-}
-
-/* HERO SLIDES */
-.hero-slide {
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  opacity:0;
-  transition:opacity 1.2s ease;
-}
-.hero-slide.active {
-  opacity:1;
-}
-
-/* GLASS CARD */
-.glass {
-  backdrop-filter: blur(14px);
-  background: rgba(0,0,0,0.55);
-}
-
-/* MENU CARD */
-.menu-card {
-  transition: transform 0.2s ease;
-}
-.menu-card:hover {
-  transform: translateY(-4px);
-}
-</style>
 </head>
 
-<body class="text-white">
+<body class="bg-black text-white p-6">
 
-<!-- HERO -->
-<section class="relative h-screen flex items-center justify-center overflow-hidden">
+<h1 class="text-3xl font-bold mb-4">Rialto</h1>
 
-  <!-- Background slideshow -->
-  <img class="hero-slide active" src="https://images.unsplash.com/photo-1504674900247-0877df9cc836">
-  <img class="hero-slide" src="https://images.unsplash.com/photo-1555992336-03a23c53b0b6">
-  <img class="hero-slide" src="https://images.unsplash.com/photo-1559339352-11d035aa65de">
+<select id="orderType" class="w-full p-3 mb-3 text-black">
+  <option value="">Select Order Type</option>
+  <option value="dinein">Dine In</option>
+  <option value="takeaway">Takeaway</option>
+</select>
 
-  <div class="absolute inset-0 bg-black/60"></div>
+<input id="name" placeholder="Name" class="w-full p-3 mb-3 text-black">
+<input id="people" type="number" placeholder="People" class="w-full p-3 mb-3 text-black">
 
-  <!-- Center Card -->
-  <div class="relative z-10 glass p-10 rounded-2xl shadow-xl w-[90%] max-w-md text-center">
-
-    <h1 class="text-4xl font-bold font-[Playfair_Display] mb-4">
-      Rialto
-    </h1>
-
-    <p class="text-gray-200 mb-6">
-      Order in seconds. Relax & enjoy.
-    </p>
-
-    <!-- Order Type -->
-    <select id="orderType" onchange="checkUnlock()"
-      class="w-full p-4 rounded-xl text-black mb-4">
-      <option value="">Select Order Type</option>
-      <option value="dinein">🍽️ Dine In</option>
-      <option value="takeaway">🥡 Takeaway</option>
-    </select>
-
-    <!-- Name -->
-    <input id="custName" oninput="checkUnlock()"
-      placeholder="Your Name"
-      class="w-full p-4 rounded-xl text-black mb-3">
-
-    <!-- People -->
-    <input id="people" type="number" oninput="checkUnlock()"
-      placeholder="Number of People"
-      class="w-full p-4 rounded-xl text-black mb-5">
-
-    <p id="errorMsg" class="text-red-300 text-sm"></p>
-  </div>
-</section>
-
-<!-- MENU -->
-<section class="min-h-screen bg-white text-black px-6 py-20">
-  <h2 class="text-4xl font-bold text-center mb-12">Our Menu</h2>
-
-  <div id="menu" class="max-w-6xl mx-auto space-y-12"></div>
-</section>
-
-<!-- CART BAR -->
-<div id="cartBar" class="fixed bottom-0 left-0 w-full bg-black text-white p-4 hidden">
-  <div class="flex justify-between items-center max-w-6xl mx-auto">
-    <span id="cartSummary">0 items</span>
-    <button class="bg-yellow-500 text-black px-6 py-3 rounded-full font-semibold">
-      Place Order
-    </button>
-  </div>
-</div>
+<button onclick="placeOrder()" class="bg-yellow-500 text-black px-6 py-3 rounded">
+  Place Order
+</button>
 
 <script>
-/* HERO SLIDER */
-let slide = 0;
-const slides = document.querySelectorAll('.hero-slide');
-setInterval(() => {
-  slides.forEach(s => s.classList.remove('active'));
-  slides[slide].classList.add('active');
-  slide = (slide + 1) % slides.length;
-}, 3500);
+async function placeOrder() {
+  const payload = {
+    name: name.value,
+    items: ["Paneer Tikka", "Butter Naan"], // TEMP items
+    people: Number(people.value)
+  };
 
-/* MENU DATA */
-const menuData = {
-  "Starters": [
-    { name: "Paneer Tikka", price: 220 },
-    { name: "Veg Crispy", price: 180 }
-  ],
-  "Main Course": [
-    { name: "Paneer Bhurji", price: 260 },
-    { name: "Kaju Masala", price: 280 },
-    { name: "Veg Kolhapuri", price: 240 }
-  ],
-  "Breads": [
-    { name: "Butter Naan", price: 40 },
-    { name: "Garlic Naan", price: 50 }
-  ],
-  "Rice": [
-    { name: "Jeera Rice", price: 180 }
-  ],
-  "Desserts": [
-    { name: "Ice Cream", price: 120 }
-  ]
-};
-
-let cart = [];
-let isUnlocked = false;
-
-/* RENDER MENU */
-function renderMenu() {
-  const menu = document.getElementById("menu");
-  menu.innerHTML = "";
-
-  Object.keys(menuData).forEach(category => {
-    menu.innerHTML += `<h3 class="text-2xl font-semibold">${category}</h3>`;
-
-    menuData[category].forEach(item => {
-      menu.innerHTML += `
-        <div class="menu-card bg-gray-100 p-6 rounded-xl flex justify-between items-center mb-4">
-          <div>
-            <p class="font-semibold">${item.name}</p>
-            <p class="text-gray-600">₹${item.price}</p>
-          </div>
-          <button
-            class="addBtn bg-yellow-500 px-4 py-2 rounded-xl font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
-            onclick="addItem('${item.name}', ${item.price})"
-            disabled>
-            Add
-          </button>
-        </div>
-      `;
-    });
+  const res = await fetch("/api/order", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
   });
+
+  const data = await res.json();
+  alert("Order sent to manager");
 }
-
-/* ADD ITEM */
-function addItem(name, price) {
-  cart.push({ name, price });
-  updateCart();
-}
-
-/* CART UPDATE */
-function updateCart() {
-  const bar = document.getElementById("cartBar");
-  const total = cart.reduce((sum, i) => sum + i.price, 0);
-  document.getElementById("cartSummary").innerText =
-    `${cart.length} items • ₹${total}`;
-  bar.classList.remove("hidden");
-}
-
-/* UNLOCK LOGIC */
-function checkUnlock() {
-  const type = orderType.value;
-  const name = custName.value.trim();
-  const ppl = people.value;
-
-  if (type && name && ppl) {
-    isUnlocked = true;
-    errorMsg.innerText = "";
-  } else {
-    isUnlocked = false;
-    errorMsg.innerText = "Select order type and enter all details to add items";
-  }
-
-  document.querySelectorAll(".addBtn").forEach(btn => {
-    btn.disabled = !isUnlocked;
-  });
-}
-
-renderMenu();
 </script>
 
 </body>
