@@ -7,17 +7,15 @@ const supabase = createClient(
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).json({ error: "Method Not Allowed" });
   }
 
   const { orderId, tableNumber } = req.body;
 
-  // Mark order done
   await supabase.from("orders")
     .update({ status: "DONE" })
     .eq("id", orderId);
 
-  // Free table
   await supabase.from("tables")
     .update({ occupied: false })
     .eq("number", tableNumber);

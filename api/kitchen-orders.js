@@ -6,11 +6,15 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("orders")
     .select("*")
     .eq("status", "COOKING")
     .order("created_at");
+
+  if (error) {
+    return res.status(500).json({ error: error.message });
+  }
 
   res.json(data || []);
 }

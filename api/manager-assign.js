@@ -7,12 +7,11 @@ const supabase = createClient(
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).json({ error: "Method Not Allowed" });
   }
 
   const { tableNumber } = req.body;
 
-  // Get table
   const { data: table } = await supabase
     .from("tables")
     .select("*")
@@ -23,34 +22,22 @@ export default async function handler(req, res) {
     return res.json({ error: "Table not available" });
   }
 
-  // Get queue ordered by arrival
   const { data: queue } = await supabase
     .from("queue")
     .select("*")
     .order("created_at");
 
-  if (!queue || queue.length === 0) {
-    return res.json({ error: "No waiting orders" });
-  }
-
-  // Rule 1: exact fit
   let selected = queue.find(q => q.people === table.capacity);
-
-  // Rule 2: FIFO
-  if (!selected) {
-    selected = queue.find(q => q.people < table.capacity);
-  }
+  if (!selected) selected = queue.find(q => q.people < table.capacity);
 
   if (!selected) {
     return res.json({ error: "No suitable party" });
   }
 
-  // Assign table
   await supabase.from("tables")
     .update({ occupied: true })
     .eq("number", table.number);
 
-  // Move order to cooking
   await supabase.from("orders").insert({
     name: selected.name,
     items: selected.items,
@@ -59,7 +46,6 @@ export default async function handler(req, res) {
     status: "COOKING"
   });
 
-  // Remove from queue
   await supabase.from("queue").delete().eq("id", selected.id);
 
   res.json({ success: true });
