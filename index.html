@@ -43,6 +43,42 @@ async function placeOrder() {
   alert("Order sent to manager");
 }
 </script>
+<script>
+async function placeOrder() {
+  try {
+    const name = document.getElementById("custName")?.value;
+    const people = document.getElementById("guestCount")?.value;
+
+    if (!name || !people) {
+      alert("Please enter name and number of people");
+      return;
+    }
+
+    const payload = {
+      name: name,
+      people: Number(people),
+      items: ["Paneer Tikka", "Butter Naan"] // TEMP menu
+    };
+
+    const response = await fetch("/api/order", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error("Backend error");
+    }
+
+    alert("Order placed successfully. Please wait for table assignment.");
+  } catch (err) {
+    console.error(err);
+    alert("Order failed. Check console.");
+  }
+}
+</script>
 
 </body>
 </html>
