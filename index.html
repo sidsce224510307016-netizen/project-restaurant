@@ -1,56 +1,235 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rialto | Order</title>
+<title>Rialto | Smart Order</title>
 
-<link rel="stylesheet" href="style.css">
+<!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: system-ui, sans-serif;
+}
+
+body {
+  background: #000;
+  color: #fff;
+  overflow-x: hidden;
+}
+
+/* HERO */
+.hero {
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+
+.hero img.active {
+  opacity: 1;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+}
+
+/* CARD */
+.card {
+  position: relative;
+  z-index: 2;
+  max-width: 420px;
+  margin: auto;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.75);
+  border-radius: 20px;
+  padding: 30px;
+  text-align: center;
+}
+
+.card h1 {
+  margin-bottom: 20px;
+}
+
+select, input, button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 12px;
+  border-radius: 12px;
+  border: none;
+  font-size: 16px;
+}
+
+button {
+  background: #facc15;
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:disabled {
+  background: #555;
+  cursor: not-allowed;
+}
+
+/* MENU */
+.menu {
+  padding: 60px 20px;
+  background: #111;
+  min-height: 100vh;
+}
+
+.menu.locked {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.menu h2 {
+  margin-top: 40px;
+}
+
+.item {
+  background: #1f1f1f;
+  padding: 16px;
+  border-radius: 14px;
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.cart-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #facc15;
+  color: #000;
+  padding: 16px;
+  text-align: center;
+  font-weight: bold;
+}
+</style>
 </head>
 
 <body>
 
-<section class="hero">
+<!-- HERO -->
+<div class="hero">
   <img src="https://images.unsplash.com/photo-1555992336-03a23c53b0b6" class="active">
   <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836">
+  <img src="https://images.unsplash.com/photo-1540189549336-e6e99c3679fe">
+  <div class="overlay"></div>
 
-  <div class="glass" style="position:relative;z-index:1;max-width:400px;margin:0 auto;top:20%">
-    <h2 class="page-title">Rialto</h2>
+  <div class="card">
+    <h1>Rialto</h1>
 
-    <select id="orderType" class="btn btn-primary" style="width:100%;margin-bottom:10px">
+    <select id="orderType">
       <option value="">Select Order Type</option>
-      <option value="dinein">Dine In</option>
-      <option value="takeaway">Takeaway</option>
+      <option value="DINE_IN">Dine In</option>
+      <option value="TAKEAWAY">Takeaway</option>
     </select>
 
-    <input id="custName" placeholder="Name" class="btn" style="width:100%;margin-bottom:10px">
+    <input id="name" placeholder="Your Name">
+    <input id="people" type="number" min="1" placeholder="Number of People">
 
-    <input id="guestCount" type="number" placeholder="People"
-      class="btn" style="width:100%;margin-bottom:10px">
-
-    <button class="btn btn-primary" onclick="placeOrder()" style="width:100%">
-      Place Order
-    </button>
-
-    <p id="msg" class="muted"></p>
+    <button onclick="unlockMenu()">View Menu</button>
+    <p id="error" style="color:#f87171;margin-top:10px;"></p>
   </div>
-</section>
+</div>
+
+<!-- MENU -->
+<div id="menu" class="menu locked">
+  <h2>Appetizers</h2>
+  <div class="item"><span>Paneer Tikka</span><button onclick="add('Paneer Tikka')">Add</button></div>
+
+  <h2>Main Course</h2>
+  <div class="item"><span>Paneer Bhurji</span><button onclick="add('Paneer Bhurji')">Add</button></div>
+  <div class="item"><span>Kaju Masala</span><button onclick="add('Kaju Masala')">Add</button></div>
+
+  <h2>Breads</h2>
+  <div class="item"><span>Butter Naan</span><button onclick="add('Butter Naan')">Add</button></div>
+</div>
+
+<div class="cart-bar" onclick="placeOrder()">Place Order</div>
 
 <script>
+/* SLIDESHOW */
+const slides = document.querySelectorAll('.hero img');
+let i = 0;
+setInterval(() => {
+  slides.forEach(s => s.classList.remove('active'));
+  slides[i].classList.add('active');
+  i = (i + 1) % slides.length;
+}, 3500);
+
+/* STATE */
+let cart = [];
+
+/* SUPABASE */
 const supabase = supabaseJs.createClient(
-  "https://gvadtfpunbhbhuqeqsiq.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2YWR0ZnB1bmJoYmh1cWVxc2lxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMTU1NjYsImV4cCI6MjA4NDU5MTU2Nn0.4IWXlhGf5zS9P-8MJs4uT9XUkbr8CIdwLMNHLm6AQKc"
+  'https://gvadtfpunbhbhuqeqsiq.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2YWR0ZnB1bmJoYmh1cWVxc2lxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMTU1NjYsImV4cCI6MjA4NDU5MTU2Nn0.4IWXlhGf5zS9P-8MJs4uT9XUkbr8CIdwLMNHLm6AQKc'
 );
 
-async function placeOrder() {
-  const { error } = await supabase.from("queue").insert({
-    name: custName.value,
-    people: Number(guestCount.value),
-    items: ["Paneer Tikka", "Butter Naan"]
-  });
+/* UNLOCK */
+function unlockMenu() {
+  const type = orderType.value;
+  const n = name.value.trim();
+  const p = Number(people.value);
 
-  msg.innerText = error ? error.message : "Order placed. Wait for table.";
+  if (!type || !n || (type === 'DINE_IN' && !p)) {
+    error.innerText = "Fill all required details";
+    return;
+  }
+
+  error.innerText = "";
+  document.getElementById("menu").classList.remove("locked");
+  document.getElementById("menu").scrollIntoView({behavior:"smooth"});
+}
+
+/* ADD ITEM */
+function add(item) {
+  cart.push(item);
+  alert(item + " added");
+}
+
+/* PLACE ORDER */
+async function placeOrder() {
+  if (cart.length === 0) {
+    alert("Add items first");
+    return;
+  }
+
+  const { error } = await supabase.from('orders').insert([{
+    name: name.value,
+    items: cart,
+    people: Number(people.value || 0),
+    status: "WAITING"
+  }]);
+
+  if (error) {
+    alert("Order failed");
+    console.error(error);
+  } else {
+    alert("Order placed!");
+    cart = [];
+  }
 }
 </script>
 
