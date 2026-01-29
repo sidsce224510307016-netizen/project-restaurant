@@ -4,61 +4,187 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rialto | Smart Order</title>
+
+    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
-        body { background: #0b0e14; color: white; font-family: sans-serif; padding: 20px; margin: 0; }
-        .hero-bg { height: 100vh; display: flex; align-items: center; justify-content: center; background: url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200') center/cover; position: fixed; width: 100%; top: 0; left: 0; z-index: 1000; }
-        .glass-box { background: rgba(0,0,0,0.85); padding: 30px; border-radius: 20px; width: 320px; text-align: center; border: 1px solid #444; }
-        input, select { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #444; background: #222; color: white; box-sizing: border-box; }
-        .primary-btn { width: 100%; background: #ffb300; color: black; padding: 15px; border-radius: 10px; font-weight: bold; border: none; cursor: pointer; }
-        #menu-area { padding: 40px 20px; margin-top: 100vh; position: relative; z-index: 5; visibility: hidden; }
-        .card { background: #161b22; padding: 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border: 1px solid #333; }
-        .add-btn { background: #ffb300; color: black; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        /* Simple locked state - just visual */
-        .add-btn:disabled { background: #444 !important; color: #888 !important; cursor: not-allowed; opacity: 0.5; }
-        #active-label { background: #ffb300; color: black; padding: 10px; position: fixed; bottom: 0; width: 100%; left: 0; text-align: center; display: none; font-weight: bold; z-index: 2000; }
+        body {
+            background: #0b0e14;
+            color: white;
+            font-family: sans-serif;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .hero-bg {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200') center/cover;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            left: 0;
+            z-index: 10;
+        }
+
+        .glass-box {
+            background: rgba(0,0,0,0.85);
+            padding: 30px;
+            border-radius: 20px;
+            width: 320px;
+            text-align: center;
+            border: 1px solid #444;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+            background: #222;
+            color: white;
+            box-sizing: border-box;
+        }
+
+        .primary-btn {
+            width: 100%;
+            background: #ffb300;
+            color: black;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+        }
+
+        #menu-area {
+            padding: 40px 20px;
+            margin-top: 100vh;
+            position: relative;
+            z-index: 5;
+        }
+
+        .card {
+            background: #161b22;
+            padding: 20px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border: 1px solid #333;
+        }
+
+        .add-btn {
+            background: #ffb300;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .locked {
+            background: #444 !important;
+            color: #888 !important;
+            opacity: 0.5;
+            pointer-events: none;
+            cursor: not-allowed;
+        }
+
+        #active-label {
+            background: #ffb300;
+            color: black;
+            padding: 10px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            left: 0;
+            text-align: center;
+            display: none;
+            font-weight: bold;
+            z-index: 100;
+        }
     </style>
 </head>
+
 <body>
 
+<!-- LOGIN / SESSION -->
 <section class="hero-bg" id="login-hero">
     <div class="glass-box">
         <h1>Rialto</h1>
+
         <select id="typeSelect" onchange="toggleSizeInput()">
             <option value="Dine In">Dine In</option>
             <option value="Takeaway">Takeaway</option>
         </select>
+
         <input type="text" id="userName" placeholder="Your Name">
+
         <div id="size-wrap">
             <input type="number" id="userSize" placeholder="Number of People">
         </div>
-        <button class="primary-btn" onclick="confirmAndUnlock()">CONFIRM & VIEW MENU</button>
+
+        <button class="primary-btn" onclick="confirmAndUnlock()">
+            CONFIRM & VIEW MENU
+        </button>
     </div>
 </section>
 
+<!-- MENU -->
 <section id="menu-area">
     <h2 style="color:#ffb300;">Our Menu</h2>
+
     <div class="card">
-        <div><h4>Paneer Tikka</h4><p>₹220</p></div>
-        <button class="add-btn" disabled onclick="submitOrder(event,'Paneer Tikka')">Add</button>
+        <div>
+            <h4>Paneer Tikka</h4>
+            <p>₹220</p>
+        </div>
+        <button class="add-btn locked" onclick="submitOrder(event,'Paneer Tikka')">
+            Add
+        </button>
     </div>
+
     <div class="card">
-        <div><h4>Butter Chicken</h4><p>₹450</p></div>
-        <button class="add-btn" disabled onclick="submitOrder(event,'Butter Chicken')">Add</button>
+        <div>
+            <h4>Butter Chicken</h4>
+            <p>₹450</p>
+        </div>
+        <button class="add-btn locked" onclick="submitOrder(event,'Butter Chicken')">
+            Add
+        </button>
     </div>
 </section>
 
-<div id="active-label">SESSION ACTIVE: <span id="user-tag"></span></div>
+<!-- ACTIVE SESSION BAR -->
+<div id="active-label">
+    SESSION ACTIVE: <span id="user-tag"></span>
+</div>
 
 <script>
-    // Replace these with your actual details
-    const supabaseClient = supabase.createClient('YOUR_URL', 'YOUR_KEY');
+    /* ✅ FIXED: Do NOT overwrite supabase */
+    const supabaseClient = supabase.createClient(
+        'YOUR_SUPABASE_URL',
+        'YOUR_SUPABASE_ANON_KEY'
+    );
 
-    let session = { active: false, name: '', type: '', size: 1 };
+    let session = {
+        active: false,
+        name: '',
+        type: '',
+        size: 1
+    };
 
     function toggleSizeInput() {
         const type = document.getElementById('typeSelect').value;
-        document.getElementById('size-wrap').style.display = (type === 'Takeaway') ? 'none' : 'block';
+        document.getElementById('size-wrap').style.display =
+            (type === 'Takeaway') ? 'none' : 'block';
     }
 
     function confirmAndUnlock() {
@@ -66,30 +192,41 @@
         const type = document.getElementById('typeSelect').value;
         const size = document.getElementById('userSize').value;
 
-        if (!name) return alert("Please enter your name");
-        if (type === 'Dine In' && !size) return alert("Please enter number of people");
+        if (!name) {
+            alert("Please enter your name");
+            return;
+        }
+
+        if (type === 'Dine In' && !size) {
+            alert("Please enter number of people");
+            return;
+        }
 
         session.active = true;
         session.name = name;
         session.type = type;
         session.size = (type === 'Takeaway') ? 1 : parseInt(size);
 
-        // UNLOCK MENU - Most robust way
-        document.getElementById('menu-area').style.visibility = 'visible';
-        document.getElementById('menu-area').style.marginTop = '0';
-        document.getElementById('login-hero').style.display = 'none';
-        
+        /* UNLOCK BUTTONS */
         document.querySelectorAll('.add-btn').forEach(btn => {
+            btn.classList.remove('locked');
             btn.disabled = false;
         });
 
-        document.getElementById('user-tag').innerText = `${name} (${type})`;
+        document.getElementById('login-hero').style.display = 'none';
+        document.getElementById('menu-area').style.marginTop = '0';
+        document.getElementById('user-tag').innerText =
+            `${name} (${type})`;
         document.getElementById('active-label').style.display = 'block';
+
         window.scrollTo(0, 0);
     }
 
     async function submitOrder(event, itemName) {
-        if (!session.active) return;
+        if (!session.active) {
+            alert("Session not active");
+            return;
+        }
 
         const btn = event.target;
         btn.disabled = true;
@@ -108,9 +245,13 @@
         btn.disabled = false;
         btn.innerText = "Add";
 
-        if (error) alert("Error: " + error.message);
-        else alert(itemName + " added successfully");
+        if (error) {
+            alert("Error: " + error.message);
+        } else {
+            alert(itemName + " added successfully");
+        }
     }
 </script>
+
 </body>
 </html>
