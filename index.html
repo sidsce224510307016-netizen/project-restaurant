@@ -18,59 +18,105 @@
     </style>
 </head>
 <body>
-    <section class="hero">
-        <div class="slideshow">
-            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200')"></div>
-            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1200')"></div>
-            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200')"></div>
-        </div>
-        <div class="glass-box" id="login-step">
-            <h1>Rialto</h1>
-            <select id="orderType" style="margin-bottom:10px; width:100%; padding:10px; border-radius:8px;">
-                <option value="Dine In">Dine In</option>
-                <option value="Takeaway">Takeaway</option>
-            </select>
-            <input type="text" id="custName" placeholder="Your Name">
+   <section class="hero">
+    <div class="slideshow">
+        <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200')"></div>
+        <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1200')"></div>
+        <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200')"></div>
+    </div>
+    <div class="glass-box" id="login-step">
+        <h1>Rialto</h1>
+        <p>Digital Dining Experience</p>
+        
+        <select id="orderType" onchange="togglePeopleInput()" style="margin-bottom:10px; width:100%; padding:10px; border-radius:8px;">
+            <option value="Dine In">Dine In</option>
+            <option value="Takeaway">Takeaway</option>
+        </select>
+
+        <input type="text" id="custName" placeholder="Enter Your Name">
+        
+        <div id="people-container">
             <input type="number" id="partySize" placeholder="Number of People">
-            <button class="primary-btn" style="width:100%; margin-top:15px; background:#ffb300; color:black;" onclick="goMenu()">Confirm & View Menu</button>
         </div>
-    </section>
 
-    <section id="menu-section" style="padding: 20px; background: #0b0e14; color: white;">
-        <h2>Our Menu</h2>
-        <div class="card" style="background:#161b22; padding:15px; border-radius:12px; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <div><h4>Paneer Tikka</h4><p>₹220</p></div>
-            <button class="add-btn locked" onclick="order('Paneer Tikka')">Add</button>
-        </div>
-    </section>
+        <button class="primary-btn" style="width:100%; margin-top:15px; background:#ffb300; color:black; font-weight:bold;" onclick="goMenu()">Confirm & View Menu</button>
+    </div>
+</section>
 
-    <script>
-        const supabase = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_KEY');
-        let customer = { registered: false };
+<script>
+    const supabase = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_KEY');
+    
+    let customer = { 
+        registered: false,
+        name: '',
+        size: 0,
+        type: 'Dine In'
+    };
 
-        function goMenu() {
-            const name = document.getElementById('custName').value;
-            const size = document.getElementById('partySize').value;
-            if (!name || !size) return alert("Enter name and people!");
-            
-            customer = { name, size: parseInt(size), type: document.getElementById('orderType').value, registered: true };
+    // Show/Hide "Number of People" based on Order Type
+    function togglePeopleInput() {
+        const type = document.getElementById('orderType').value;
+        const container = document.getElementById('people-container');
+        if (type === 'Takeaway') {
+            container.style.display = 'none';
+        } else {
+            container.style.display = 'block';
+        }
+    }
+
+    function goMenu() {
+        const name = document.getElementById('custName').value;
+        const type = document.getElementById('orderType').value;
+        const sizeInput = document.getElementById('partySize').value;
+
+        // Validation Logic
+        if (!name) return alert("Please enter your name!");
+        if (type === 'Dine In' && !sizeInput) return alert("Please enter number of people for Dine In!");
+
+        // Set Customer Data
+        customer.name = name;
+        customer.type = type;
+        customer.size = type === 'Dine In' ? parseInt(sizeInput) : 1; // Takeaway defaults to 1
+        customer.registered = true;
+
+        // Visual Unlock
+        document.getElementById('login-step').style.opacity = "0";
+        setTimeout(() => {
             document.getElementById('login-step').style.display = 'none';
-            document.querySelectorAll('.add-btn').forEach(b => b.classList.remove('locked'));
+            
+            // Unlock Add Buttons
+            document.querySelectorAll('.add-btn').forEach(btn => {
+                btn.classList.remove('locked');
+                btn.style.background = "#ffb300"; // Rialto Gold
+                btn.style.color = "black";
+            });
+
+            // Auto Scroll to Menu
             window.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
+        }, 500);
+    }
+
+    async function order(itemName) {
+        if (!customer.registered) {
+            alert("Please fill in your details at the top first!");
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
         }
 
-        async function order(itemName) {
-            if (!customer.registered) return alert("Fill details at top first!");
-            const { error } = await supabase.from('orders').insert([{
-                customer_name: customer.name,
-                party_size: customer.size,
-                items: { item: itemName },
-                order_type: customer.type,
-                status: 'Pending'
-            }]);
-            if (!error) alert(itemName + " ordered!");
-            else alert("Error: " + error.message);
+        const { error } = await supabase.from('orders').insert([{
+            customer_name: customer.name,
+            party_size: customer.size,
+            items: { item: itemName },
+            order_type: customer.type,
+            status: 'Pending'
+        }]);
+
+        if (!error) {
+            alert(itemName + " added to order successfully!");
+        } else {
+            alert("Database Error: " + error.message);
         }
-    </script>
+    }
+</script>
 </body>
 </html>
