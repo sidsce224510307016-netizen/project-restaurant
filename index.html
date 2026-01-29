@@ -1,84 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rialto – Order</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
+    <title>Order Now</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
+<body>
+    <div class="container" id="app">
+        <div id="login-step">
+            <h2>Welcome! 👋</h2>
+            <input type="text" id="custName" placeholder="Enter Your Name">
+            <input type="number" id="partySize" placeholder="How many people?">
+            <button style="width:100%" onclick="goMenu()">View Menu</button>
+        </div>
 
-<body class="bg-black text-white p-6">
+        <div id="menu-step" style="display:none">
+            <h3 id="greet">Hello</h3>
+            <div class="card">
+                <div><h4>Butter Chicken</h4><p>₹450</p></div>
+                <button onclick="order('Butter Chicken')">+</button>
+            </div>
+            <div class="card">
+                <div><h4>Garlic Naan</h4><p>₹60</p></div>
+                <button onclick="order('Garlic Naan')">+</button>
+            </div>
+            <div id="status-msg"></div>
+        </div>
+    </div>
 
-<h1 class="text-3xl font-bold mb-4">Rialto</h1>
+    <script>
+        const supabase = supabase.createClient('https://tuuyqswxrewppyropjgt.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1dXlxc3d4cmV3cHB5cm9wamd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMDI5NTQsImV4cCI6MjA4NDU3ODk1NH0.UNXGnOzLApliOb-L_Z9nEldKqPAG7SKz5ho8dfMyChs');
+let customer = { type: 'Dine In' }; // Default type
 
-<select id="orderType" class="w-full p-3 mb-3 text-black">
-  <option value="">Select Order Type</option>
-  <option value="dinein">Dine In</option>
-  <option value="takeaway">Takeaway</option>
-</select>
+function goMenu() {
+    const name = document.getElementById('custName').value;
+    const size = document.getElementById('partySize').value;
 
-<input id="name" placeholder="Name" class="w-full p-3 mb-3 text-black">
-<input id="people" type="number" placeholder="People" class="w-full p-3 mb-3 text-black">
-
-<button onclick="placeOrder()" class="bg-yellow-500 text-black px-6 py-3 rounded">
-  Place Order
-</button>
-
-<script>
-async function placeOrder() {
-  const payload = {
-    name: name.value,
-    items: ["Paneer Tikka", "Butter Naan"], // TEMP items
-    people: Number(people.value)
-  };
-
-  const res = await fetch("/api/order", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-
-  const data = await res.json();
-  alert("Order sent to manager");
-}
-</script>
-<script>
-async function placeOrder() {
-  try {
-    const name = document.getElementById("custName")?.value;
-    const people = document.getElementById("guestCount")?.value;
-
-    if (!name || !people) {
-      alert("Please enter name and number of people");
-      return;
+    if (!name || !size) {
+        alert("Please enter your name and number of people!");
+        return;
     }
 
-    const payload = {
-      name: name,
-      people: Number(people),
-      items: ["Paneer Tikka", "Butter Naan"] // TEMP menu
-    };
-
-    const response = await fetch("/api/order", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      throw new Error("Backend error");
-    }
-
-    alert("Order placed successfully. Please wait for table assignment.");
-  } catch (err) {
-    console.error(err);
-    alert("Order failed. Check console.");
-  }
+    customer.name = name;
+    customer.size = parseInt(size);
+    
+    document.getElementById('login-step').style.display = 'none';
+    document.getElementById('menu-step').style.display = 'block';
+    document.getElementById('greet').innerText = `Ordering for ${customer.name}`;
 }
-</script>
 
+async function order(item) {
+    const { error } = await supabase.from('orders').insert([{
+        customer_name: customer.name,
+        party_size: customer.size,
+        items: { item: item },
+        order_type: customer.type, // Track if it's Dine In or Takeaway
+        status: 'Pending'
+    }]);
+
+    if (!error) {
+        alert("Order sent! We are finding the best table for you.");
+    } else {
+        console.error("Error placing order:", error.message);
+    }
+}
+    </script>
 </body>
 </html>

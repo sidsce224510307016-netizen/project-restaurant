@@ -1,31 +1,39 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Manager</title>
-<script src="https://cdn.tailwindcss.com"></script>
+    <title>Manager Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
+<body>
+    <div class="container">
+        <h2>Manager: Table Assignment</h2>
+        <button class="btn-assign" onclick="runAutoSeating()">⚡ Auto-Assign Tables</button>
+        <hr>
+        <div id="queue-list"> Loading Queue... </div>
+    </div>
 
-<body class="bg-gray-900 text-white p-6">
+    <script>
+        const supabase = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_KEY');
 
-<h1 class="text-2xl font-bold mb-4">Manager Dashboard</h1>
+        async function runAutoSeating() {
+            const { data: orders } = await supabase.from('orders').select('*').eq('status', 'Pending').order('created_at', {ascending: true});
+            const { data: tables } = await supabase.from('tables').select('*').eq('status', 'Available');
 
-<button onclick="assign(1)" class="bg-green-500 text-black px-4 py-2 rounded">
-  Auto Assign Table 1
-</button>
+            for (let order of orders) {
+                // Logic: Exact fit first
+                let match = tables.find(t => t.capacity === order.party_size);
+                if(!match) match = tables.find(t => t.capacity > order.party_size);
 
-<script>
-
-async function autoAssign(tableNumber) {
-  const res = await fetch("/api/manager-assign", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tableNumber })
-  });
-
-  const data = await res.json();
-  alert(JSON.stringify(data));
-}
-</script>
-
+                if(match) {
+                    await supabase.from('orders').update({ status: 'Cooking', table_id: match.id }).eq('id', order.id);
+                    await supabase.from('tables').update({ status: 'Occupied' }).eq('id', match.id);
+                    alert(`Table ${match.id} assigned to ${order.customer_name}`);
+                    location.reload();
+                    break;
+                }
+            }
+        }
+    </script>
 </body>
 </html>

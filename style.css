@@ -1,0 +1,50 @@
+:root {
+    --bg: #0b0e14;
+    --card: #161b22;
+    --primary: #00c853; /* Green for food */
+    --accent: #ff3e6c;  /* Pink for buttons */
+    --text: #ffffff;
+}
+
+body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, sans-serif;
+    margin: 0; padding: 0;
+}
+
+.container { padding: 20px; max-width: 600px; margin: auto; }
+
+.card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid #30363d;
+}
+
+button {
+    background: var(--accent);
+    color: white; border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-assign { background: var(--primary); }
+
+input {
+    width: 100%; padding: 12px; margin: 10px 0;
+    background: var(--card); border: 1px solid #30363d;
+    color: white; border-radius: 8px; box-sizing: border-box;
+}
+
+.badge {
+    padding: 4px 8px; border-radius: 4px; font-size: 12px;
+}
+.pending { background: #e3b341; color: black; }
+.cooking { background: var(--primary); }
