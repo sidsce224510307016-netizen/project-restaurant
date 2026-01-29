@@ -1,70 +1,194 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Order Now</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
+    <title>Rialto | Smart Order</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Slideshow & Hero Styles */
+        .hero {
+            position: relative;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .slideshow {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+        }
+
+        .slide {
+            position: absolute;
+            width: 100%; height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            filter: brightness(0.6);
+            animation: crossFade 12s infinite;
+        }
+
+        .slide:nth-child(2) { animation-delay: 4s; }
+        .slide:nth-child(3) { animation-delay: 8s; }
+
+        @keyframes crossFade {
+            0% { opacity: 0; }
+            10% { opacity: 1; }
+            33% { opacity: 1; }
+            43% { opacity: 0; }
+            100% { opacity: 0; }
+        }
+
+        .glass-box {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 2rem;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* Menu Locking Styles */
+        .add-btn.locked {
+            background: #444 !important;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        #menu-section {
+            padding: 20px;
+            background: #0b0e14;
+        }
+
+        .category-title {
+            margin-top: 40px;
+            border-bottom: 2px solid var(--accent);
+            display: inline-block;
+            padding-bottom: 5px;
+        }
+    </style>
 </head>
 <body>
-    <div class="container" id="app">
-        <div id="login-step">
-            <h2>Welcome! 👋</h2>
-            <input type="text" id="custName" placeholder="Enter Your Name">
-            <input type="number" id="partySize" placeholder="How many people?">
-            <button style="width:100%" onclick="goMenu()">View Menu</button>
+
+    <section class="hero">
+        <div class="slideshow">
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1500')"></div>
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1500')"></div>
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1500')"></div>
         </div>
 
-        <div id="menu-step" style="display:none">
-            <h3 id="greet">Hello</h3>
-            <div class="card">
-                <div><h4>Butter Chicken</h4><p>₹450</p></div>
-                <button onclick="order('Butter Chicken')">+</button>
-            </div>
-            <div class="card">
-                <div><h4>Garlic Naan</h4><p>₹60</p></div>
-                <button onclick="order('Garlic Naan')">+</button>
-            </div>
-            <div id="status-msg"></div>
+        <div class="glass-box" id="login-step">
+            <h1 style="font-size: 3rem; margin-bottom: 10px;">Rialto</h1>
+            <p style="margin-bottom: 20px;">Experience Digital Dining</p>
+            
+            <select id="orderType" style="margin-bottom: 10px;">
+                <option value="Dine In">Dine In</option>
+                <option value="Takeaway">Takeaway</option>
+            </select>
+            <input type="text" id="custName" placeholder="Enter Your Name">
+            <input type="number" id="partySize" placeholder="Number of People">
+            
+            <button class="primary-btn" style="width: 100%; margin-top: 15px;" onclick="goMenu()">Confirm & View Menu</button>
         </div>
-    </div>
+    </section>
+
+    <section id="menu-section">
+        <h2 class="category-title">Appetizers</h2>
+        <div class="card">
+            <div>
+                <h4>Paneer Tikka</h4>
+                <p>₹220</p>
+            </div>
+            <button class="add-btn locked" onclick="order('Paneer Tikka')">Add</button>
+        </div>
+
+        <h2 class="category-title">Main Course</h2>
+        <div class="card">
+            <div>
+                <h4>Butter Chicken</h4>
+                <p>₹450</p>
+            </div>
+            <button class="add-btn locked" onclick="order('Butter Chicken')">Add</button>
+        </div>
+    </section>
 
     <script>
-        const supabase = supabase.createClient('https://tuuyqswxrewppyropjgt.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1dXlxc3d4cmV3cHB5cm9wamd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMDI5NTQsImV4cCI6MjA4NDU3ODk1NH0.UNXGnOzLApliOb-L_Z9nEldKqPAG7SKz5ho8dfMyChs');
-let customer = { type: 'Dine In' }; // Default type
+        // REPLACE THESE WITH YOUR ACTUAL KEYS
+        const supabaseUrl = 'YOUR_SUPABASE_URL';
+        const supabaseKey = 'YOUR_KEY';
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-function goMenu() {
-    const name = document.getElementById('custName').value;
-    const size = document.getElementById('partySize').value;
+        let customer = {
+            registered: false,
+            name: '',
+            size: 0,
+            type: ''
+        };
 
-    if (!name || !size) {
-        alert("Please enter your name and number of people!");
-        return;
-    }
+        function goMenu() {
+            const name = document.getElementById('custName').value;
+            const size = document.getElementById('partySize').value;
+            const type = document.getElementById('orderType').value;
 
-    customer.name = name;
-    customer.size = parseInt(size);
-    
-    document.getElementById('login-step').style.display = 'none';
-    document.getElementById('menu-step').style.display = 'block';
-    document.getElementById('greet').innerText = `Ordering for ${customer.name}`;
-}
+            if (!name || !size) {
+                alert("Please enter your name and party size to unlock ordering!");
+                return;
+            }
 
-async function order(item) {
-    const { error } = await supabase.from('orders').insert([{
-        customer_name: customer.name,
-        party_size: customer.size,
-        items: { item: item },
-        order_type: customer.type, // Track if it's Dine In or Takeaway
-        status: 'Pending'
-    }]);
+            customer.name = name;
+            customer.size = parseInt(size);
+            customer.type = type;
+            customer.registered = true;
 
-    if (!error) {
-        alert("Order sent! We are finding the best table for you.");
-    } else {
-        console.error("Error placing order:", error.message);
-    }
-}
+            // Smooth transition to menu
+            document.getElementById('login-step').style.transition = "0.5s";
+            document.getElementById('login-step').style.opacity = "0";
+            
+            // Unlock all buttons
+            const btns = document.querySelectorAll('.add-btn');
+            btns.forEach(btn => {
+                btn.classList.remove('locked');
+                btn.style.background = "#ffb300"; // Rialto Gold
+            });
+
+            setTimeout(() => {
+                document.getElementById('login-step').style.display = 'none';
+                window.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
+            }, 500);
+        }
+
+        async function order(itemName) {
+            if (!customer.registered) {
+                alert("Please fill in your details at the top first!");
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+
+            const { error } = await supabase.from('orders').insert([{
+                customer_name: customer.name,
+                party_size: customer.size,
+                items: { item: itemName },
+                order_type: customer.type,
+                status: 'Pending'
+            }]);
+
+            if (!error) {
+                alert(`Success! ${itemName} has been added to your queue.`);
+            } else {
+                alert("Error: " + error.message);
+            }
+        }
     </script>
 </body>
 </html>

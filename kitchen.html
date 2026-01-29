@@ -12,26 +12,62 @@
     </div>
 
     <script>
-        const supabase = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_KEY');
-        
-        async function loadOrders() {
-            const { data } = await supabase.from('orders').select('*').eq('status', 'Cooking');
-            let html = '';
-            data.forEach(o => {
-                html += `<div class="card">
-                    <div><b>Table ${o.table_id}</b>: ${o.customer_name}</div>
-                    <button onclick="finish('${o.id}', '${o.table_id}')">DONE</button>
-                </div>`;
-            });
-            document.getElementById('kitchen-list').innerHTML = html;
+       const supabaseUrl = 'YOUR_SUPABASE_URL';
+const supabaseKey = 'YOUR_KEY';
+const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+async function runAutoSeating() {
+    // 1. Fetch all Pending orders (FIFO)
+    const { data: orders, error: orderErr } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('status', 'Pending')
+        .order('created_at', { ascending: true });
+
+    // 2. Fetch available tables
+    const { data: tables, error: tableErr } = await supabase
+        .from('tables')
+        .select('*')
+        .eq('status', 'Available');
+
+    if (orderErr || tableErr) return alert("Error fetching data");
+
+    for (let order of orders) {
+        // CASE A: Takeaway - No table needed, send straight to kitchen
+        if (order.order_type === 'Takeaway') {
+            await supabase.from('orders')
+                .update({ status: 'Cooking', table_id: 0 }) // 0 or NULL signifies Takeaway
+                .eq('id', order.id);
+            continue; 
         }
 
-        async function finish(orderId, tableId) {
-            await supabase.from('orders').update({ status: 'Completed' }).eq('id', orderId);
-            await supabase.from('tables').update({ status: 'Available' }).eq('id', tableId);
-            loadOrders();
+        // CASE B: Dine In - Use Exact-Fit Priority Logic
+        let match = tables.find(t => t.capacity === order.party_size);
+        
+        // Fallback: Smallest table that fits the group
+        if (!match) {
+            match = tables
+                .filter(t => t.capacity >= order.party_size)
+                .sort((a, b) => a.capacity - b.capacity)[0];
         }
-        setInterval(loadOrders, 3000);
+
+        if (match) {
+            // Assign the table and update status
+            await supabase.from('orders')
+                .update({ status: 'Cooking', table_id: match.id })
+                .eq('id', order.id);
+
+            await supabase.from('tables')
+                .update({ status: 'Occupied' })
+                .eq('id', match.id);
+
+            // Remove table from local available list for this loop
+            tables.splice(tables.indexOf(match), 1);
+        }
+    }
+    alert("Queue processed! Refreshing dashboards...");
+    location.reload();
+}
     </script>
 </body>
 </html>
