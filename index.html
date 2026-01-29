@@ -1,256 +1,57 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rialto | Smart Order</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rialto | Order</title>
 
-    <!-- Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <style>
-        body {
-            background: #0b0e14;
-            color: white;
-            font-family: sans-serif;
-            padding: 20px;
-            margin: 0;
-        }
-
-        .hero-bg {
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200') center/cover;
-            position: fixed;
-            width: 100%;
-            top: 0;
-            left: 0;
-            z-index: 10;
-        }
-
-        .glass-box {
-            background: rgba(0,0,0,0.85);
-            padding: 30px;
-            border-radius: 20px;
-            width: 320px;
-            text-align: center;
-            border: 1px solid #444;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 8px;
-            border: 1px solid #444;
-            background: #222;
-            color: white;
-            box-sizing: border-box;
-        }
-
-        .primary-btn {
-            width: 100%;
-            background: #ffb300;
-            color: black;
-            padding: 15px;
-            border-radius: 10px;
-            font-weight: bold;
-            border: none;
-            cursor: pointer;
-        }
-
-        #menu-area {
-            padding: 40px 20px;
-            margin-top: 100vh;
-            position: relative;
-            z-index: 5;
-        }
-
-        .card {
-            background: #161b22;
-            padding: 20px;
-            border-radius: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            border: 1px solid #333;
-        }
-
-        .add-btn {
-            background: #ffb300;
-            color: black;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .locked {
-            background: #444 !important;
-            color: #888 !important;
-            opacity: 0.5;
-            pointer-events: none;
-            cursor: not-allowed;
-        }
-
-        #active-label {
-            background: #ffb300;
-            color: black;
-            padding: 10px;
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            left: 0;
-            text-align: center;
-            display: none;
-            font-weight: bold;
-            z-index: 100;
-        }
-    </style>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
 
-<!-- LOGIN / SESSION -->
-<section class="hero-bg" id="login-hero">
-    <div class="glass-box">
-        <h1>Rialto</h1>
+<section class="hero">
+  <img src="https://images.unsplash.com/photo-1555992336-03a23c53b0b6" class="active">
+  <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836">
 
-        <select id="typeSelect" onchange="toggleSizeInput()">
-            <option value="Dine In">Dine In</option>
-            <option value="Takeaway">Takeaway</option>
-        </select>
+  <div class="glass" style="position:relative;z-index:1;max-width:400px;margin:0 auto;top:20%">
+    <h2 class="page-title">Rialto</h2>
 
-        <input type="text" id="userName" placeholder="Your Name">
+    <select id="orderType" class="btn btn-primary" style="width:100%;margin-bottom:10px">
+      <option value="">Select Order Type</option>
+      <option value="dinein">Dine In</option>
+      <option value="takeaway">Takeaway</option>
+    </select>
 
-        <div id="size-wrap">
-            <input type="number" id="userSize" placeholder="Number of People">
-        </div>
+    <input id="custName" placeholder="Name" class="btn" style="width:100%;margin-bottom:10px">
 
-        <button class="primary-btn" onclick="confirmAndUnlock()">
-            CONFIRM & VIEW MENU
-        </button>
-    </div>
+    <input id="guestCount" type="number" placeholder="People"
+      class="btn" style="width:100%;margin-bottom:10px">
+
+    <button class="btn btn-primary" onclick="placeOrder()" style="width:100%">
+      Place Order
+    </button>
+
+    <p id="msg" class="muted"></p>
+  </div>
 </section>
-
-<!-- MENU -->
-<section id="menu-area">
-    <h2 style="color:#ffb300;">Our Menu</h2>
-
-    <div class="card">
-        <div>
-            <h4>Paneer Tikka</h4>
-            <p>₹220</p>
-        </div>
-        <button class="add-btn locked" onclick="submitOrder(event,'Paneer Tikka')">
-            Add
-        </button>
-    </div>
-
-    <div class="card">
-        <div>
-            <h4>Butter Chicken</h4>
-            <p>₹450</p>
-        </div>
-        <button class="add-btn locked" onclick="submitOrder(event,'Butter Chicken')">
-            Add
-        </button>
-    </div>
-</section>
-
-<!-- ACTIVE SESSION BAR -->
-<div id="active-label">
-    SESSION ACTIVE: <span id="user-tag"></span>
-</div>
 
 <script>
-    /* ✅ FIXED: Do NOT overwrite supabase */
-    const supabaseClient = supabase.createClient(
-        'YOUR_SUPABASE_URL',
-        'YOUR_SUPABASE_ANON_KEY'
-    );
+const supabase = supabaseJs.createClient(
+  "https://gvadtfpunbhbhuqeqsiq.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2YWR0ZnB1bmJoYmh1cWVxc2lxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMTU1NjYsImV4cCI6MjA4NDU5MTU2Nn0.4IWXlhGf5zS9P-8MJs4uT9XUkbr8CIdwLMNHLm6AQKc"
+);
 
-    let session = {
-        active: false,
-        name: '',
-        type: '',
-        size: 1
-    };
+async function placeOrder() {
+  const { error } = await supabase.from("queue").insert({
+    name: custName.value,
+    people: Number(guestCount.value),
+    items: ["Paneer Tikka", "Butter Naan"]
+  });
 
-    function toggleSizeInput() {
-        const type = document.getElementById('typeSelect').value;
-        document.getElementById('size-wrap').style.display =
-            (type === 'Takeaway') ? 'none' : 'block';
-    }
-
-    function confirmAndUnlock() {
-        const name = document.getElementById('userName').value.trim();
-        const type = document.getElementById('typeSelect').value;
-        const size = document.getElementById('userSize').value;
-
-        if (!name) {
-            alert("Please enter your name");
-            return;
-        }
-
-        if (type === 'Dine In' && !size) {
-            alert("Please enter number of people");
-            return;
-        }
-
-        session.active = true;
-        session.name = name;
-        session.type = type;
-        session.size = (type === 'Takeaway') ? 1 : parseInt(size);
-
-        /* UNLOCK BUTTONS */
-        document.querySelectorAll('.add-btn').forEach(btn => {
-            btn.classList.remove('locked');
-            btn.disabled = false;
-        });
-
-        document.getElementById('login-hero').style.display = 'none';
-        document.getElementById('menu-area').style.marginTop = '0';
-        document.getElementById('user-tag').innerText =
-            `${name} (${type})`;
-        document.getElementById('active-label').style.display = 'block';
-
-        window.scrollTo(0, 0);
-    }
-
-    async function submitOrder(event, itemName) {
-        if (!session.active) {
-            alert("Session not active");
-            return;
-        }
-
-        const btn = event.target;
-        btn.disabled = true;
-        btn.innerText = "Adding...";
-
-        const { error } = await supabaseClient
-            .from('orders')
-            .insert([{
-                customer_name: session.name,
-                party_size: session.size,
-                items: { item: itemName },
-                order_type: session.type,
-                status: 'Pending'
-            }]);
-
-        btn.disabled = false;
-        btn.innerText = "Add";
-
-        if (error) {
-            alert("Error: " + error.message);
-        } else {
-            alert(itemName + " added successfully");
-        }
-    }
+  msg.innerText = error ? error.message : "Order placed. Wait for table.";
+}
 </script>
 
 </body>

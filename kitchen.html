@@ -1,73 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Kitchen Dashboard</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>Kitchen</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
-    <div class="container">
-        <h2>Kitchen Orders</h2>
-        <div id="kitchen-list"></div>
-    </div>
 
-    <script>
-       const supabaseUrl = 'YOUR_SUPABASE_URL';
-const supabaseKey = 'YOUR_KEY';
-const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+<body class="p-6">
 
-async function runAutoSeating() {
-    // 1. Fetch all Pending orders (FIFO)
-    const { data: orders, error: orderErr } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('status', 'Pending')
-        .order('created_at', { ascending: true });
+<h1 class="page-title">Kitchen Orders</h1>
+<div id="orders"></div>
 
-    // 2. Fetch available tables
-    const { data: tables, error: tableErr } = await supabase
-        .from('tables')
-        .select('*')
-        .eq('status', 'Available');
+<script>
+const supabase = supabaseJs.createClient(
+  "https://gvadtfpunbhbhuqeqsiq.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2YWR0ZnB1bmJoYmh1cWVxc2lxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMTU1NjYsImV4cCI6MjA4NDU5MTU2Nn0.4IWXlhGf5zS9P-8MJs4uT9XUkbr8CIdwLMNHLm6AQKc"
+);
 
-    if (orderErr || tableErr) return alert("Error fetching data");
+async function load() {
+  const { data } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("status", "COOKING");
 
-    for (let order of orders) {
-        // CASE A: Takeaway - No table needed, send straight to kitchen
-        if (order.order_type === 'Takeaway') {
-            await supabase.from('orders')
-                .update({ status: 'Cooking', table_id: 0 }) // 0 or NULL signifies Takeaway
-                .eq('id', order.id);
-            continue; 
-        }
-
-        // CASE B: Dine In - Use Exact-Fit Priority Logic
-        let match = tables.find(t => t.capacity === order.party_size);
-        
-        // Fallback: Smallest table that fits the group
-        if (!match) {
-            match = tables
-                .filter(t => t.capacity >= order.party_size)
-                .sort((a, b) => a.capacity - b.capacity)[0];
-        }
-
-        if (match) {
-            // Assign the table and update status
-            await supabase.from('orders')
-                .update({ status: 'Cooking', table_id: match.id })
-                .eq('id', order.id);
-
-            await supabase.from('tables')
-                .update({ status: 'Occupied' })
-                .eq('id', match.id);
-
-            // Remove table from local available list for this loop
-            tables.splice(tables.indexOf(match), 1);
-        }
-    }
-    alert("Queue processed! Refreshing dashboards...");
-    location.reload();
+  orders.innerHTML = data.map(o => `
+    <div class="card">
+      ${o.name} — Table ${o.table_number}
+      <ul>${o.items.map(i => `<li>${i}</li>`).join("")}</ul>
+      <button class="btn btn-success" onclick="done(${o.id})">Done</button>
+    </div>`).join("");
 }
-    </script>
+
+async function done(id) {
+  await supabase.from("orders").update({ status: "DONE" }).eq("id", id);
+  load();
+}
+
+setInterval(load, 3000);
+load();
+</script>
 </body>
 </html>

@@ -1,40 +1,60 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Manager Dashboard</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>Manager</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body style="background:#0b0e14; color:white; padding:20px;">
-    <h2>Table Manager</h2>
-    <button onclick="runAutoSeating()" style="background:#00c853; padding:15px; border-radius:8px; font-weight:bold;">⚡ AUTO-ASSIGN TABLES</button>
-    <div id="queue" style="margin-top:20px;"></div>
 
-    <script>
-        const supabase = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_KEY');
+<body class="p-6">
 
-        async function runAutoSeating() {
-            const { data: orders } = await supabase.from('orders').select('*').eq('status', 'Pending');
-            const { data: tables } = await supabase.from('tables').select('*').eq('status', 'Available');
+<h1 class="page-title">Manager Dashboard</h1>
 
-            for (let order of orders) {
-                if (order.order_type === 'Takeaway') {
-                    await supabase.from('orders').update({ status: 'Cooking', table_id: 0 }).eq('id', order.id);
-                    continue;
-                }
+<div id="tables" class="grid"></div>
+<h3>Waiting Queue</h3>
+<div id="queue"></div>
 
-                // Exact Fit then Smallest Fit
-                let match = tables.filter(t => t.capacity >= order.party_size).sort((a,b) => a.capacity - b.capacity)[0];
-                
-                if (match) {
-                    await supabase.from('orders').update({ status: 'Cooking', table_id: match.id }).eq('id', order.id);
-                    await supabase.from('tables').update({ status: 'Occupied' }).eq('id', match.id);
-                    tables.splice(tables.indexOf(match), 1);
-                }
-            }
-            alert("Processing Complete!");
-            location.reload();
-        }
-    </script>
+<script>
+const supabase = supabaseJs.createClient(
+  "https://gvadtfpunbhbhuqeqsiq.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2YWR0ZnB1bmJoYmh1cWVxc2lxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMTU1NjYsImV4cCI6MjA4NDU5MTU2Nn0.4IWXlhGf5zS9P-8MJs4uT9XUkbr8CIdwLMNHLm6AQKc"
+);
+
+async function load() {
+  const { data: tables } = await supabase.from("tables").select("*");
+  const { data: queue } = await supabase.from("queue").select("*");
+
+  document.getElementById("tables").innerHTML =
+    tables.map(t => `
+      <div class="card">
+        Table ${t.number} (${t.capacity})
+        ${t.occupied ? "Occupied" :
+        `<button class="btn btn-success" onclick="assign(${t.number})">Assign</button>`}
+      </div>`).join("");
+
+  document.getElementById("queue").innerHTML =
+    queue.map(q => `<div class="card">${q.name} (${q.people})</div>`).join("");
+}
+
+async function assign(table) {
+  const { data: queue } = await supabase.from("queue").select("*");
+  const match = queue.find(q => q.people <= 4);
+  if (!match) return alert("No fit");
+
+  await supabase.from("tables").update({ occupied: true }).eq("number", table);
+  await supabase.from("orders").insert({
+    name: match.name,
+    items: match.items,
+    people: match.people,
+    table_number: table,
+    status: "COOKING"
+  });
+  await supabase.from("queue").delete().eq("id", match.id);
+
+  load();
+}
+
+load();
+</script>
 </body>
 </html>
