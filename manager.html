@@ -5,34 +5,35 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
-    <div class="container">
-        <h2>Manager: Table Assignment</h2>
-        <button class="btn-assign" onclick="runAutoSeating()">⚡ Auto-Assign Tables</button>
-        <hr>
-        <div id="queue-list"> Loading Queue... </div>
-    </div>
+<body style="background:#0b0e14; color:white; padding:20px;">
+    <h2>Table Manager</h2>
+    <button onclick="runAutoSeating()" style="background:#00c853; padding:15px; border-radius:8px; font-weight:bold;">⚡ AUTO-ASSIGN TABLES</button>
+    <div id="queue" style="margin-top:20px;"></div>
 
     <script>
         const supabase = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_KEY');
 
         async function runAutoSeating() {
-            const { data: orders } = await supabase.from('orders').select('*').eq('status', 'Pending').order('created_at', {ascending: true});
+            const { data: orders } = await supabase.from('orders').select('*').eq('status', 'Pending');
             const { data: tables } = await supabase.from('tables').select('*').eq('status', 'Available');
 
             for (let order of orders) {
-                // Logic: Exact fit first
-                let match = tables.find(t => t.capacity === order.party_size);
-                if(!match) match = tables.find(t => t.capacity > order.party_size);
+                if (order.order_type === 'Takeaway') {
+                    await supabase.from('orders').update({ status: 'Cooking', table_id: 0 }).eq('id', order.id);
+                    continue;
+                }
 
-                if(match) {
+                // Exact Fit then Smallest Fit
+                let match = tables.filter(t => t.capacity >= order.party_size).sort((a,b) => a.capacity - b.capacity)[0];
+                
+                if (match) {
                     await supabase.from('orders').update({ status: 'Cooking', table_id: match.id }).eq('id', order.id);
                     await supabase.from('tables').update({ status: 'Occupied' }).eq('id', match.id);
-                    alert(`Table ${match.id} assigned to ${order.customer_name}`);
-                    location.reload();
-                    break;
+                    tables.splice(tables.indexOf(match), 1);
                 }
             }
+            alert("Processing Complete!");
+            location.reload();
         }
     </script>
 </body>

@@ -7,174 +7,60 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Slideshow & Hero Styles */
-        .hero {
-            position: relative;
-            height: 100vh;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        .slideshow {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: -1;
-        }
-
-        .slide {
-            position: absolute;
-            width: 100%; height: 100%;
-            background-size: cover;
-            background-position: center;
-            opacity: 0;
-            filter: brightness(0.6);
-            animation: crossFade 12s infinite;
-        }
-
+        .hero { position: relative; height: 100vh; width: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .slideshow { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .slide { position: absolute; width: 100%; height: 100%; background-size: cover; background-position: center; opacity: 0; filter: brightness(0.6); animation: crossFade 12s infinite; }
         .slide:nth-child(2) { animation-delay: 4s; }
         .slide:nth-child(3) { animation-delay: 8s; }
-
-        @keyframes crossFade {
-            0% { opacity: 0; }
-            10% { opacity: 1; }
-            33% { opacity: 1; }
-            43% { opacity: 0; }
-            100% { opacity: 0; }
-        }
-
-        .glass-box {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 2rem;
-            border-radius: 20px;
-            width: 90%;
-            max-width: 400px;
-            text-align: center;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
-
-        /* Menu Locking Styles */
-        .add-btn.locked {
-            background: #444 !important;
-            cursor: not-allowed;
-            opacity: 0.5;
-        }
-
-        #menu-section {
-            padding: 20px;
-            background: #0b0e14;
-        }
-
-        .category-title {
-            margin-top: 40px;
-            border-bottom: 2px solid var(--accent);
-            display: inline-block;
-            padding-bottom: 5px;
-        }
+        @keyframes crossFade { 0% { opacity: 0; } 10% { opacity: 1; } 33% { opacity: 1; } 43% { opacity: 0; } 100% { opacity: 0; } }
+        .glass-box { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.2); padding: 2rem; border-radius: 20px; width: 90%; max-width: 400px; text-align: center; color: white; }
+        .add-btn.locked { background: #444 !important; cursor: not-allowed; opacity: 0.5; }
     </style>
 </head>
 <body>
-
     <section class="hero">
         <div class="slideshow">
-            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1500')"></div>
-            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1500')"></div>
-            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1500')"></div>
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200')"></div>
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1200')"></div>
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200')"></div>
         </div>
-
         <div class="glass-box" id="login-step">
-            <h1 style="font-size: 3rem; margin-bottom: 10px;">Rialto</h1>
-            <p style="margin-bottom: 20px;">Experience Digital Dining</p>
-            
-            <select id="orderType" style="margin-bottom: 10px;">
+            <h1>Rialto</h1>
+            <select id="orderType" style="margin-bottom:10px; width:100%; padding:10px; border-radius:8px;">
                 <option value="Dine In">Dine In</option>
                 <option value="Takeaway">Takeaway</option>
             </select>
-            <input type="text" id="custName" placeholder="Enter Your Name">
+            <input type="text" id="custName" placeholder="Your Name">
             <input type="number" id="partySize" placeholder="Number of People">
-            
-            <button class="primary-btn" style="width: 100%; margin-top: 15px;" onclick="goMenu()">Confirm & View Menu</button>
+            <button class="primary-btn" style="width:100%; margin-top:15px; background:#ffb300; color:black;" onclick="goMenu()">Confirm & View Menu</button>
         </div>
     </section>
 
-    <section id="menu-section">
-        <h2 class="category-title">Appetizers</h2>
-        <div class="card">
-            <div>
-                <h4>Paneer Tikka</h4>
-                <p>₹220</p>
-            </div>
+    <section id="menu-section" style="padding: 20px; background: #0b0e14; color: white;">
+        <h2>Our Menu</h2>
+        <div class="card" style="background:#161b22; padding:15px; border-radius:12px; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div><h4>Paneer Tikka</h4><p>₹220</p></div>
             <button class="add-btn locked" onclick="order('Paneer Tikka')">Add</button>
-        </div>
-
-        <h2 class="category-title">Main Course</h2>
-        <div class="card">
-            <div>
-                <h4>Butter Chicken</h4>
-                <p>₹450</p>
-            </div>
-            <button class="add-btn locked" onclick="order('Butter Chicken')">Add</button>
         </div>
     </section>
 
     <script>
-        // REPLACE THESE WITH YOUR ACTUAL KEYS
-        const supabaseUrl = 'YOUR_SUPABASE_URL';
-        const supabaseKey = 'YOUR_KEY';
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
-        let customer = {
-            registered: false,
-            name: '',
-            size: 0,
-            type: ''
-        };
+        const supabase = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_KEY');
+        let customer = { registered: false };
 
         function goMenu() {
             const name = document.getElementById('custName').value;
             const size = document.getElementById('partySize').value;
-            const type = document.getElementById('orderType').value;
-
-            if (!name || !size) {
-                alert("Please enter your name and party size to unlock ordering!");
-                return;
-            }
-
-            customer.name = name;
-            customer.size = parseInt(size);
-            customer.type = type;
-            customer.registered = true;
-
-            // Smooth transition to menu
-            document.getElementById('login-step').style.transition = "0.5s";
-            document.getElementById('login-step').style.opacity = "0";
+            if (!name || !size) return alert("Enter name and people!");
             
-            // Unlock all buttons
-            const btns = document.querySelectorAll('.add-btn');
-            btns.forEach(btn => {
-                btn.classList.remove('locked');
-                btn.style.background = "#ffb300"; // Rialto Gold
-            });
-
-            setTimeout(() => {
-                document.getElementById('login-step').style.display = 'none';
-                window.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
-            }, 500);
+            customer = { name, size: parseInt(size), type: document.getElementById('orderType').value, registered: true };
+            document.getElementById('login-step').style.display = 'none';
+            document.querySelectorAll('.add-btn').forEach(b => b.classList.remove('locked'));
+            window.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
         }
 
         async function order(itemName) {
-            if (!customer.registered) {
-                alert("Please fill in your details at the top first!");
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                return;
-            }
-
+            if (!customer.registered) return alert("Fill details at top first!");
             const { error } = await supabase.from('orders').insert([{
                 customer_name: customer.name,
                 party_size: customer.size,
@@ -182,12 +68,8 @@
                 order_type: customer.type,
                 status: 'Pending'
             }]);
-
-            if (!error) {
-                alert(`Success! ${itemName} has been added to your queue.`);
-            } else {
-                alert("Error: " + error.message);
-            }
+            if (!error) alert(itemName + " ordered!");
+            else alert("Error: " + error.message);
         }
     </script>
 </body>
