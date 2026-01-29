@@ -5,143 +5,102 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rialto | Smart Order</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="style.css">
     <style>
-        /* Slideshow */
-        .hero { position: relative; height: 100vh; width: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .slideshow { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
-        .slide { position: absolute; width: 100%; height: 100%; background-size: cover; background-position: center; opacity: 0; filter: brightness(0.5); animation: crossFade 12s infinite; }
-        .slide:nth-child(2) { animation-delay: 4s; }
-        .slide:nth-child(3) { animation-delay: 8s; }
-        @keyframes crossFade { 0% { opacity: 0; } 10% { opacity: 1; } 33% { opacity: 1; } 43% { opacity: 0; } 100% { opacity: 0; } }
+        body { background: #0b0e14; color: white; font-family: sans-serif; margin: 0; }
+        .hero { height: 100vh; display: flex; align-items: center; justify-content: center; background: url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200') center/cover; }
+        .glass-box { background: rgba(0,0,0,0.8); padding: 30px; border-radius: 20px; width: 300px; text-align: center; border: 1px solid #333; }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #444; background: #222; color: white; box-sizing: border-box; }
+        .primary-btn { width: 100%; background: #ffb300; color: black; padding: 15px; border-radius: 10px; font-weight: bold; border: none; cursor: pointer; }
         
-        /* Glass UI */
-        .glass-box { background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); padding: 30px; border-radius: 20px; width: 85%; max-width: 400px; text-align: center; color: white; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #444; background: #222; color: white; font-size: 16px; box-sizing: border-box;}
-        
-        /* The "Lock" Logic */
-        .add-btn { background: #ffb300; color: black; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .add-btn.locked { background: #444 !important; color: #888 !important; cursor: not-allowed; pointer-events: none; opacity: 0.5; }
-        
-        #menu-section { padding: 40px 20px; background: #0b0e14; min-height: 100vh; }
+        #menu-section { padding: 40px 20px; }
         .card { background: #161b22; padding: 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border: 1px solid #30363d; }
+        
+        /* THE LOCK STYLE */
+        .add-btn { background: #ffb300; color: black; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .locked { background: #444 !important; color: #888 !important; opacity: 0.5; pointer-events: none; }
     </style>
 </head>
 <body>
 
-    <section class="hero">
-        <div class="slideshow">
-            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200')"></div>
-            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1200')"></div>
-            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200')"></div>
-        </div>
-
-        <div class="glass-box" id="login-step">
-            <h1 style="font-size: 2.5rem; margin-bottom: 5px;">Rialto</h1>
-            <p style="color: #ccc; margin-bottom: 20px;">Digital Dining & Takeaway</p>
-            
-            <select id="orderType" onchange="checkOrderType()">
+    <section class="hero" id="hero-area">
+        <div class="glass-box">
+            <h1>Rialto</h1>
+            <select id="orderType" onchange="toggleInputs()">
                 <option value="Dine In">Dine In</option>
                 <option value="Takeaway">Takeaway</option>
             </select>
-
             <input type="text" id="custName" placeholder="Your Name">
-            
-            <div id="people-wrap">
-                <input type="number" id="partySize" placeholder="Number of People">
-            </div>
-
-            <button onclick="unlockMenu()" style="width:100%; margin-top:15px; background:#ffb300; color:black; padding:15px; border-radius:10px; font-weight:800; border:none; cursor:pointer;">
-                CONFIRM & VIEW MENU
-            </button>
+            <input type="number" id="partySize" placeholder="Number of People">
+            <button class="primary-btn" onclick="startSession()">CONFIRM & VIEW MENU</button>
         </div>
     </section>
 
     <section id="menu-section">
-        <h2 style="color:white; margin-bottom:20px;">Menu</h2>
-        
+        <h2>Menu</h2>
         <div class="card">
-            <div style="color:white;">
-                <h4 style="margin:0;">Paneer Tikka</h4>
-                <p style="margin:5px 0 0 0; color:#aaa;">₹220</p>
-            </div>
-            <button class="add-btn locked" onclick="sendOrder('Paneer Tikka')">Add</button>
+            <div><h4>Paneer Tikka</h4><p>₹220</p></div>
+            <button class="add-btn locked" onclick="placeOrder('Paneer Tikka')">Add</button>
         </div>
-
         <div class="card">
-            <div style="color:white;">
-                <h4 style="margin:0;">Butter Chicken</h4>
-                <p style="margin:5px 0 0 0; color:#aaa;">₹450</p>
-            </div>
-            <button class="add-btn locked" onclick="sendOrder('Butter Chicken')">Add</button>
+            <div><h4>Butter Chicken</h4><p>₹450</p></div>
+            <button class="add-btn locked" onclick="placeOrder('Butter Chicken')">Add</button>
         </div>
     </section>
 
     <script>
-        // Replace with your actual credentials
-        const supabase = supabase.createClient('YOUR_URL', 'YOUR_KEY');
+        // REPLACE WITH YOUR ACTUAL KEYS
+        const supabase = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_KEY');
 
-        let sessionData = { 
-            active: false,
-            name: '',
-            size: 1,
-            type: 'Dine In'
-        };
+        let userSession = { active: false, name: '', type: '', size: 0 };
 
-        // 1. Toggle People Input
-        function checkOrderType() {
+        function toggleInputs() {
             const type = document.getElementById('orderType').value;
-            document.getElementById('people-wrap').style.display = (type === 'Takeaway') ? 'none' : 'block';
+            const sizeInput = document.getElementById('partySize');
+            // Hide/Show people input
+            sizeInput.style.display = (type === 'Takeaway') ? 'none' : 'block';
         }
 
-        // 2. Unlock Menu
-        function unlockMenu() {
+        function startSession() {
             const name = document.getElementById('custName').value;
             const type = document.getElementById('orderType').value;
             const size = document.getElementById('partySize').value;
 
-            if (!name) return alert("Please enter your name!");
-            if (type === 'Dine In' && !size) return alert("Please enter party size!");
+            if (!name) return alert("Please enter your name");
+            if (type === 'Dine In' && !size) return alert("Please enter number of people");
 
-            // Save session
-            sessionData.active = true;
-            sessionData.name = name;
-            sessionData.type = type;
-            sessionData.size = (type === 'Takeaway') ? 1 : parseInt(size);
+            // 1. Save data
+            userSession.active = true;
+            userSession.name = name;
+            userSession.type = type;
+            userSession.size = (type === 'Takeaway') ? 1 : parseInt(size);
 
-            // UI Changes
-            document.getElementById('login-step').style.opacity = "0";
-            document.querySelectorAll('.add-btn').forEach(btn => {
-                btn.classList.remove('locked');
+            // 2. UNLOCK BUTTONS (Force)
+            const allButtons = document.querySelectorAll('.add-btn');
+            allButtons.forEach(btn => {
+                btn.classList.remove('locked'); // This removes the grey look
             });
 
-            setTimeout(() => {
-                document.getElementById('login-step').style.display = 'none';
-                window.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
-            }, 500);
+            // 3. Scroll & Hide Hero
+            document.getElementById('hero-area').style.display = 'none';
+            window.scrollTo(0,0);
+            alert("Welcome " + name + "! You can now add items to your order.");
         }
 
-        // 3. Send to Supabase
-        async function sendOrder(itemName) {
-            if (!sessionData.active) {
-                alert("Please scroll up and complete your details first!");
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                return;
-            }
+        async function placeOrder(itemName) {
+            if (!userSession.active) return alert("Please confirm your details at the top first!");
 
             const { error } = await supabase.from('orders').insert([{
-                customer_name: sessionData.name,
-                party_size: sessionData.size,
+                customer_name: userSession.name,
+                party_size: userSession.size,
                 items: { item: itemName },
-                order_type: sessionData.type,
+                order_type: userSession.type,
                 status: 'Pending'
             }]);
 
             if (!error) {
-                alert(`SUCCESS: ${itemName} added!`);
+                alert(itemName + " added!");
             } else {
-                alert("DATABASE ERROR: " + error.message);
-                console.error(error);
+                alert("Database Error: " + error.message);
             }
         }
     </script>
